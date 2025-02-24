@@ -8,13 +8,18 @@ public class TicTacToeManager : MonoBehaviour
 {
     [SerializeField] private Button[] buttons;
     [SerializeField] private Sprite xSprite, oSprite; // Assign in the Inspector
-    public TextMeshProUGUI turnText, observerText, resultText, gameRoomNameText;
+    public TextMeshProUGUI turnText, resultText, gameRoomNameText;
 
     private string roomName;
     private bool isPlayerTurn = false;
     private int playerID; // 1 for X, 2 for O
 
     private bool isObserver = false; // Tracks if the client is an observer
+
+    [SerializeField] private TextMeshProUGUI totalTimeText; // UI to display game time
+    private float totalTimeElapsed = 0f; // Tracks total game time
+    private bool isGameTimerRunning = false; // Tracks if the timer is active
+
 
     void Start()
     {
@@ -27,17 +32,50 @@ public class TicTacToeManager : MonoBehaviour
             buttons[i].onClick.AddListener(() => OnCellClicked(index));
         }
     }
+
+    public void StartGameTimer()
+    {
+        totalTimeElapsed = 0f;
+        isGameTimerRunning = true;
+        UpdateTotalTimeText();
+    }
+
+    void Update()
+    {
+        if (isGameTimerRunning)
+        {
+            totalTimeElapsed += Time.deltaTime;
+            UpdateTotalTimeText();
+        }
+    }
+
+    public void StopGameTimer()
+    {
+        isGameTimerRunning = false;
+    }
+
+
+    private void UpdateTotalTimeText()
+    {
+        int minutes = Mathf.FloorToInt(totalTimeElapsed / 60);
+        int seconds = Mathf.FloorToInt(totalTimeElapsed % 60);
+        totalTimeText.text = $"Time: {minutes:D2}:{seconds:D2}";
+    }
+
+
     public void StartNewGame()
     {
         roomName = ""; // Clear the previous room name
-        turnText.text = "Waiting for opponent..."; // Reset turn indicator
+        turnText.text = "Waiting for opponent..."; // Reset TurnText for all
         resultText.text = ""; // Clear the result text
+
         foreach (Button button in buttons)
         {
             button.image.sprite = null; // Clear button sprites
             button.interactable = true; // Enable buttons for new game
         }
-        Debug.Log("Game UI reset for a new game.");
+
+        StartGameTimer(); // Reset and start the timer
     }
 
 
@@ -48,7 +86,31 @@ public class TicTacToeManager : MonoBehaviour
         roomName = room; // Assign room name
         UpdateTurnText();
 
+        // Reset and activate ChatManager
+        ChatManager chatManager = FindObjectOfType<ChatManager>();
+        if (chatManager != null)
+        {
+            chatManager.ResetChat(); // Reset chat state
+            chatManager.SetChatActive(true); // Ensure chat is active
+        }
+        else
+        {
+            Debug.LogError("ChatManager instance not found in the scene.");
+        }
+
+        if (isObserver)
+        {
+            turnText.text = "Observing game..."; // Observer sees this
+        }
+        else
+        {
+            UpdateTurnText(); // Players see turn-related text
+        }
+
         gameRoomNameText.text = $"Room: {roomName}";
+
+        StartGameTimer(); // Start the game timer
+        isObserver = false;
     }
 
 
@@ -67,7 +129,11 @@ public class TicTacToeManager : MonoBehaviour
 
     private void UpdateTurnText()
     {
-        if (isPlayerTurn)
+        if (isObserver)
+        {
+            turnText.text = "Observing game...";
+        }
+        else if (isPlayerTurn)
         {
             turnText.text = "Your Turn";
         }
@@ -76,6 +142,7 @@ public class TicTacToeManager : MonoBehaviour
             turnText.text = "Opponent's Turn";
         }
     }
+
 
     public void OnCellClicked(int index)
     {
@@ -106,18 +173,29 @@ public class TicTacToeManager : MonoBehaviour
     {
         if (isObserver)
         {
-            turnText.text = "Observing game..."; // Maintain observer text
-            return;
+            turnText.text = "Observing game..."; // Observer sees this
         }
+        else
+        {
+            isPlayerTurn = isTurn;
 
-        Debug.Log($"Setting player turn: IsPlayerTurn = {isTurn}");
-        isPlayerTurn = isTurn;
+            if (isTurn)
+            {
+                turnText.text = "Your Turn"; // Player's turn
+            }
+            else
+            {
+                turnText.text = "Opponent's Turn"; // Opponent's turn
+            }
+        }
         UpdateTurnText();
     }
 
-
     public void ShowGameResult(int result)
     {
+        StopGameTimer(); // Stop the timer
+
+        // Existing logic for showing game result
         if (result == 1)
             resultText.text = "Player 1 (X) Wins!";
         else if (result == 2)
@@ -125,12 +203,21 @@ public class TicTacToeManager : MonoBehaviour
         else
             resultText.text = "It's a Draw!";
 
-        // Activate ResultPanel via LoginManager
         LoginManager loginManager = UnityEngine.Object.FindObjectOfType<LoginManager>();
         if (loginManager != null)
         {
             loginManager.resultPanel.SetActive(true);
-            loginManager.resultPanelMessage.text = resultText.text; // Show result
+            loginManager.resultPanelMessage.text = resultText.text;
+        }
+
+        // Reset UI elements for all clients (players and observers)
+        if (isObserver)
+        {
+            turnText.text = "Observing game...";
+        }
+        else
+        {
+            turnText.text = ""; // Clear turn text for players
         }
     }
 
@@ -139,20 +226,37 @@ public class TicTacToeManager : MonoBehaviour
         roomName = room;
         Debug.Log($"Observer initialized for room: {roomName}");
 
-        turnText.gameObject.SetActive(false);
-        observerText.gameObject.SetActive(true);
+        // Update TurnText for the observer
+        turnText.gameObject.SetActive(true); // Ensure TurnText is active
+        turnText.text = "Observing game...";
 
-        // Update the GameRoomNameText
         gameRoomNameText.text = $"Observing Room: {roomName}";
 
-        // Set the observer-specific UI
+        // Disable interaction for all buttons
         foreach (Button button in buttons)
         {
-            button.interactable = false; // Disable interaction for observer
+            button.interactable = false; // Observers cannot interact
         }
 
-        isObserver = true; // Ensure observer flag is set (if you are using this flag)
+        isObserver = true; // Set observer flag
+
+        // Reset timer for the observer
+        totalTimeElapsed = 0f; // Reset timer to zero
+        UpdateTotalTimeText(); // Update UI to show 00:00
+        isGameTimerRunning = true; // Start the timer
+
+        // Disable ChatManager for observers
+        ChatManager chatManager = UnityEngine.Object.FindObjectOfType<ChatManager>();
+        if (chatManager != null)
+        {
+            chatManager.SetChatActive(false); // Disable for observers
+        }
+        else
+        {
+            Debug.LogError("ChatManager instance not found for observer.");
+        }
     }
+
 
     public void UpdateBoardForObserver(string serializedBoardState)
     {

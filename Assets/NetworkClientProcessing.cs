@@ -23,6 +23,14 @@ static public class NetworkClientProcessing
             string roomName = csv[1];
             int playerCount = int.Parse(csv[2]);
             loginManager.roomStatusText.text = $"Joined room: {roomName}. Waiting for players... ({playerCount}/2)";
+
+            // Reactivate ChatManager
+            ChatManager chatManager = UnityEngine.Object.FindObjectOfType<ChatManager>();
+            if (chatManager != null)
+            {
+                chatManager.ResetChat(); // Reset chat state
+                chatManager.gameObject.SetActive(true); // Ensure chat is active
+            }
         }
         else if (signifier == ServerToClientSignifiers.StartGame)
         {
@@ -56,11 +64,14 @@ static public class NetworkClientProcessing
                 Debug.LogError("ChatManager instance not found in the scene.");
             }
         }
-
         else if (signifier == ServerToClientSignifiers.AccountCreated)
         {
             loginManager.ShowFeedback("Account created successfully!");
+
+            // Request updated account list after successful account creation
+            SendMessageToServer($"{ClientToServerSignifiers.RequestAccountList}", TransportPipeline.ReliableAndInOrder);
         }
+
         else if (signifier == ServerToClientSignifiers.AccountCreationFailed)
         {
             loginManager.ShowFeedback("Account creation failed. Username already exists.");
@@ -320,6 +331,7 @@ public static class ClientToServerSignifiers
     public const int LeaveGameRoom = 5;
     public const int SendMessageToOpponent = 6;
     public const int PlayerMove = 11; // Ensure this exists in ClientToServerSignifiers
+    public const int RequestAccountList = 13;
 }
 
 public static class ServerToClientSignifiers

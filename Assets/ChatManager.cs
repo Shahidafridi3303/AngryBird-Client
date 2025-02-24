@@ -14,9 +14,29 @@ public class ChatManager : MonoBehaviour
 
     private string roomName;
 
+    public static ChatManager Instance;
+
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject); // If you want it to persist across scenes
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
     private void Start()
     {
         sendButton.onClick.AddListener(OnSendButtonPressed);
+    }
+
+    public void SetChatActive(bool isActive)
+    {
+        chatPanel.SetActive(isActive);
     }
 
     public void InitializeChat(string room)
