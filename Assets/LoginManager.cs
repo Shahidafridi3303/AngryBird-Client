@@ -14,12 +14,15 @@ public class LoginManager : MonoBehaviour
 {
     public GameObject loginPanel;
     public GameObject gameRoomPanel; // Replace lobbyPanel with gameRoomPanel
+    public GameObject ticTacToePanel; // Add a reference to the TicTacToePanel
     public TMP_InputField usernameField;
     public TMP_InputField passwordField;
     public TextMeshProUGUI feedbackText;
     public TMP_Dropdown accountDropdown;
     public TMP_InputField roomNameField; // Input for room name
     public TextMeshProUGUI roomStatusText; // Text for room status
+    public GameObject resultPanel; 
+    public TextMeshProUGUI resultPanelMessage; 
 
     private string currentRoomName = "";
 
@@ -35,6 +38,7 @@ public class LoginManager : MonoBehaviour
     {
         loginPanel.SetActive(state == UIState.Login);
         gameRoomPanel.SetActive(state == UIState.GameRoomWaiting || state == UIState.GameRoomPlaying);
+        ticTacToePanel.SetActive(state == UIState.GameRoomPlaying); // Show TicTacToePanel only when playing
     }
 
     public void OnLoginButtonPressed()
@@ -48,7 +52,6 @@ public class LoginManager : MonoBehaviour
             return;
         }
 
-        Debug.Log($"Login button pressed. Username: {username}, Password: {password}");
         NetworkClientProcessing.SendMessageToServer($"2,{username},{password}", TransportPipeline.ReliableAndInOrder);
     }
 
@@ -95,16 +98,55 @@ public class LoginManager : MonoBehaviour
         if (!string.IsNullOrEmpty(currentRoomName))
         {
             Debug.Log($"Leaving room: {currentRoomName}");
+
+            // Notify the server about leaving the room
             NetworkClientProcessing.SendMessageToServer($"5,{currentRoomName}", TransportPipeline.ReliableAndInOrder);
-            currentRoomName = "";
-            SetUIState(UIState.Login); // Go back to login state
+            currentRoomName = ""; // Clear the current room locally
+
+            // Reset TicTacToePanel and ResultPanel
+            if (ticTacToePanel != null)
+            {
+                ticTacToePanel.SetActive(false); // Deactivate the game panel
+            }
+
+            if (resultPanel != null)
+            {
+                resultPanel.SetActive(false); // Deactivate the result panel
+            }
+
+            // Return to GameRoomPanel
+            SetUIState(UIState.GameRoomWaiting);
         }
+    }
+
+    public void OnPlayAgainButtonPressed()
+    {
+        Debug.Log("Play Again button pressed. Returning to GameRoom...");
+
+        // Deactivate the ResultPanel
+        if (resultPanel != null)
+        {
+            resultPanel.SetActive(false);
+        }
+
+        // Return to the GameRoomPanel
+        SetUIState(UIState.GameRoomWaiting);
+    }
+
+
+    public void OnQuitGameButtonPressed()
+    {
+        Debug.Log("Quit Game button pressed. Exiting application...");
+        Application.Quit(); // Quit the application
     }
 
     public void StartGame()
     {
         roomStatusText.text = "Game Started! You can now play with your opponent.";
         SetUIState(UIState.GameRoomPlaying);
+        gameRoomPanel.SetActive(false); // Deactivate GameRoomPanel
+        ticTacToePanel.SetActive(true); // Activate TicTacToePanel
+        Debug.Log("TicTacToe panel activated");
     }
 
     public void OnDeleteAccountButtonPressed()
@@ -146,17 +188,12 @@ public class LoginManager : MonoBehaviour
         accountNames.Insert(0, "Select Account"); // Add default "Select Account" option
         accountDropdown.AddOptions(accountNames); // Add new options
         accountDropdown.value = 0; // Reset dropdown to the default option
-
-        Debug.Log("Dropdown populated successfully.");
     }
 
     public void OnAccountSelected(int index)
     {
-        Debug.Log($"Dropdown selection changed. Passed index: {index}");
-
         // Fetch the actual selected index directly from the dropdown
         int selectedIndex = accountDropdown.value;
-        Debug.Log($"Dropdown actual selected index: {selectedIndex}");
 
         if (selectedIndex > 0) // Skip the default "Select Account" option
         {
@@ -165,18 +202,15 @@ public class LoginManager : MonoBehaviour
 
             // Autofill username field
             usernameField.text = selectedUsername;
-            Debug.Log($"Username field updated with: {usernameField.text}");
 
             // Autofill password if available
             if (accountPasswordMap.ContainsKey(selectedUsername))
             {
                 passwordField.text = accountPasswordMap[selectedUsername];
-                Debug.Log($"Password field updated with: {passwordField.text}");
             }
             else
             {
                 passwordField.text = "";
-                Debug.Log($"Password field cleared for: {selectedUsername}");
             }
         }
         else
