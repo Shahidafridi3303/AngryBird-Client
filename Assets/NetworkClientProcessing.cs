@@ -27,7 +27,7 @@ static public class NetworkClientProcessing
         {
             loginManager.ShowFeedback("Login failed. Invalid credentials.");
         }
-        if (signifier == ServerToClientSignifiers.AccountList)
+        else if (signifier == ServerToClientSignifiers.AccountList)
         {
             Debug.Log($"Raw Account List Received: {msg}");
 
