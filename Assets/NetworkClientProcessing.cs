@@ -10,7 +10,22 @@ static public class NetworkClientProcessing
 
         LoginManager loginManager = Object.FindObjectOfType<LoginManager>();
 
-        if (signifier == ServerToClientSignifiers.AccountCreated)
+        if (signifier == ServerToClientSignifiers.GameRoomCreatedOrJoined)
+        {
+            string roomName = csv[1];
+            int playerCount = int.Parse(csv[2]);
+            loginManager.roomStatusText.text = $"Joined room: {roomName}. Waiting for players... ({playerCount}/2)";
+        }
+        else if (signifier == ServerToClientSignifiers.StartGame)
+        {
+            loginManager.StartGame();
+        }
+        else if (signifier == ServerToClientSignifiers.OpponentMessage)
+        {
+            string message = csv[1];
+            Debug.Log($"Message from opponent: {message}");
+        }
+        else if (signifier == ServerToClientSignifiers.AccountCreated)
         {
             loginManager.ShowFeedback("Account created successfully!");
         }
@@ -21,7 +36,7 @@ static public class NetworkClientProcessing
         else if (signifier == ServerToClientSignifiers.LoginSuccessful)
         {
             loginManager.ShowFeedback("Login successful!");
-            loginManager.SetUIState(UIState.Lobby);
+            loginManager.SetUIState(UIState.GameRoomWaiting);
         }
         else if (signifier == ServerToClientSignifiers.LoginFailed)
         {
@@ -154,13 +169,6 @@ static public class NetworkClientProcessing
     #endregion
 }
 
-public static class ClientToServerSignifiers
-{
-    public const int CreateAccount = 1;
-    public const int Login = 2;
-    public const int DeleteAccount = 3; // New signifier for deleting accounts
-}
-
 public static class ServerToClientSignifiers
 {
     public const int AccountCreated = 1;
@@ -170,4 +178,8 @@ public static class ServerToClientSignifiers
     public const int AccountList = 5;
     public const int AccountDeleted = 6; // New signifier for successful deletion
     public const int AccountDeletionFailed = 7; // New signifier for failed deletion
+
+    public const int GameRoomCreatedOrJoined = 8;
+    public const int StartGame = 9;
+    public const int OpponentMessage = 10;
 }

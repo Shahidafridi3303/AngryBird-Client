@@ -6,17 +6,22 @@ using UnityEngine.UI; // For Button
 public enum UIState
 {
     Login,
-    Lobby
+    GameRoomWaiting,
+    GameRoomPlaying
 }
 
 public class LoginManager : MonoBehaviour
 {
     public GameObject loginPanel;
-    public GameObject lobbyPanel;
+    public GameObject gameRoomPanel; // Replace lobbyPanel with gameRoomPanel
     public TMP_InputField usernameField;
     public TMP_InputField passwordField;
     public TextMeshProUGUI feedbackText;
     public TMP_Dropdown accountDropdown;
+    public TMP_InputField roomNameField; // Input for room name
+    public TextMeshProUGUI roomStatusText; // Text for room status
+
+    private string currentRoomName = "";
 
     // Local storage for account passwords
     private Dictionary<string, string> accountPasswordMap = new Dictionary<string, string>();
@@ -28,16 +33,8 @@ public class LoginManager : MonoBehaviour
 
     public void SetUIState(UIState state)
     {
-        if (state == UIState.Login)
-        {
-            loginPanel.SetActive(true);
-            lobbyPanel.SetActive(false);
-        }
-        else if (state == UIState.Lobby)
-        {
-            loginPanel.SetActive(false);
-            lobbyPanel.SetActive(true);
-        }
+        loginPanel.SetActive(state == UIState.Login);
+        gameRoomPanel.SetActive(state == UIState.GameRoomWaiting || state == UIState.GameRoomPlaying);
     }
 
     public void OnLoginButtonPressed()
@@ -45,30 +42,69 @@ public class LoginManager : MonoBehaviour
         string username = usernameField.text;
         string password = passwordField.text;
 
-        Debug.Log($"Login button pressed. Username: {username}, Password: {password}");
-
         if (string.IsNullOrEmpty(username))
         {
-            ShowFeedback("Please select or enter a username.");
+            ShowFeedback("Please enter a username.");
             return;
         }
 
-        // Send login data to the server
+        Debug.Log($"Login button pressed. Username: {username}, Password: {password}");
         NetworkClientProcessing.SendMessageToServer($"2,{username},{password}", TransportPipeline.ReliableAndInOrder);
-        Debug.Log($"Attempting login with Username: {username}, Password: {password}");
     }
-
 
     public void OnCreateAccountButtonPressed()
     {
         string username = usernameField.text;
         string password = passwordField.text;
+
         if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
         {
             ShowFeedback("Username and password cannot be empty.");
             return;
         }
+
+        Debug.Log($"Create account button pressed. Username: {username}");
         NetworkClientProcessing.SendMessageToServer($"1,{username},{password}", TransportPipeline.ReliableAndInOrder);
+    }
+
+    public void ShowFeedback(string message)
+    {
+        feedbackText.text = message;
+    }
+
+    public void OnCreateOrJoinRoomPressed()
+    {
+        string roomName = roomNameField.text;
+
+        if (string.IsNullOrEmpty(roomName))
+        {
+            roomStatusText.text = "Room name cannot be empty.";
+            return;
+        }
+
+        currentRoomName = roomName;
+        Debug.Log($"Attempting to join or create room: {roomName}");
+        NetworkClientProcessing.SendMessageToServer($"4,{roomName}", TransportPipeline.ReliableAndInOrder);
+
+        roomStatusText.text = $"Attempting to join room: {roomName}";
+        SetUIState(UIState.GameRoomWaiting);
+    }
+
+    public void OnLeaveRoomPressed()
+    {
+        if (!string.IsNullOrEmpty(currentRoomName))
+        {
+            Debug.Log($"Leaving room: {currentRoomName}");
+            NetworkClientProcessing.SendMessageToServer($"5,{currentRoomName}", TransportPipeline.ReliableAndInOrder);
+            currentRoomName = "";
+            SetUIState(UIState.Login); // Go back to login state
+        }
+    }
+
+    public void StartGame()
+    {
+        roomStatusText.text = "Game Started! You can now play with your opponent.";
+        SetUIState(UIState.GameRoomPlaying);
     }
 
     public void OnDeleteAccountButtonPressed()
@@ -149,10 +185,5 @@ public class LoginManager : MonoBehaviour
             passwordField.text = "";
             Debug.Log("Resetting fields as 'Select Account' was chosen.");
         }
-    }
-
-    public void ShowFeedback(string message)
-    {
-        feedbackText.text = message;
     }
 }
