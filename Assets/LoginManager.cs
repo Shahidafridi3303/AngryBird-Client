@@ -13,21 +13,20 @@ public enum UIState
 public class LoginManager : MonoBehaviour
 {
     public GameObject loginPanel;
-    public GameObject gameRoomPanel; // Replace lobbyPanel with gameRoomPanel
-    public GameObject ticTacToePanel; // Add a reference to the TicTacToePanel
-    public GameObject chatPanel; // Reference to ChatManager panel
+    public GameObject gameRoomPanel;
+    public GameObject ticTacToePanel; 
+    public GameObject chatPanel;
     public TMP_InputField usernameField;
     public TMP_InputField passwordField;
     public TextMeshProUGUI feedbackText;
     public TMP_Dropdown accountDropdown;
-    public TMP_InputField roomNameField; // Input for room name
-    public TextMeshProUGUI roomStatusText; // Text for room status
+    public TMP_InputField roomNameField; 
+    public TextMeshProUGUI roomStatusText;
     public GameObject resultPanel; 
     public TextMeshProUGUI resultPanelMessage; 
 
     private string currentRoomName = "";
 
-    // Local storage for account passwords
     private Dictionary<string, string> accountPasswordMap = new Dictionary<string, string>();
 
     private void Start()
@@ -39,8 +38,8 @@ public class LoginManager : MonoBehaviour
     {
         loginPanel.SetActive(state == UIState.Login);
         gameRoomPanel.SetActive(state == UIState.GameRoomWaiting || state == UIState.GameRoomPlaying);
-        ticTacToePanel.SetActive(state == UIState.GameRoomPlaying); // Show TicTacToePanel only when playing
-        chatPanel.SetActive(state == UIState.GameRoomPlaying); // Show ChatPanel only when playing
+        ticTacToePanel.SetActive(state == UIState.GameRoomPlaying); 
+        chatPanel.SetActive(state == UIState.GameRoomPlaying);
     }
 
     public void OnLoginButtonPressed()
@@ -108,7 +107,7 @@ public class LoginManager : MonoBehaviour
             // Reset panels
             if (ticTacToePanel != null)
             {
-                ticTacToePanel.SetActive(false); // Deactivate the game panel
+                ticTacToePanel.SetActive(false); 
             }
 
             if (chatPanel != null)
@@ -116,13 +115,13 @@ public class LoginManager : MonoBehaviour
                 ChatManager chatManager = FindObjectOfType<ChatManager>();
                 if (chatManager != null)
                 {
-                    chatManager.ResetChat(); // Reset and deactivate chat
+                    chatManager.ResetChat();
                 }
             }
 
             if (resultPanel != null)
             {
-                resultPanel.SetActive(false); // Deactivate the result panel
+                resultPanel.SetActive(false); 
             }
 
             // Return to GameRoomPanel
@@ -149,7 +148,6 @@ public class LoginManager : MonoBehaviour
 
         feedbackText.text = "Create or login to an account";
 
-        // Update UI state
         SetUIState(UIState.Login);
 
         Debug.Log("Returned to the LoginPanel from the GameRoomPanel.");
@@ -159,13 +157,11 @@ public class LoginManager : MonoBehaviour
     {
         Debug.Log("Play Again button pressed. Returning to GameRoom...");
 
-        // Deactivate the ResultPanel
         if (resultPanel != null)
         {
             resultPanel.SetActive(false);
         }
 
-        // Return to the GameRoomPanel
         SetUIState(UIState.GameRoomWaiting);
     }
 
@@ -194,25 +190,24 @@ public class LoginManager : MonoBehaviour
     {
         roomStatusText.text = "Game Started! You can now play with your opponent.";
         SetUIState(UIState.GameRoomPlaying);
-        gameRoomPanel.SetActive(false); // Deactivate GameRoomPanel
-        ticTacToePanel.SetActive(true); // Activate TicTacToePanel
-        chatPanel.SetActive(true); // Activate ChatManager panel
+        gameRoomPanel.SetActive(false); 
+        ticTacToePanel.SetActive(true); 
+        chatPanel.SetActive(true);
 
         ChatManager chatManager = FindObjectOfType<ChatManager>();
         if (chatManager != null)
         {
-            chatManager.InitializeChat(currentRoomName); // Initialize chat with room name
+            chatManager.InitializeChat(currentRoomName);
         }
 
         Debug.Log("TicTacToe panel and ChatManager panel activated");
     }
 
-
     public void OnDeleteAccountButtonPressed()
     {
         int selectedIndex = accountDropdown.value;
 
-        if (selectedIndex == 0) // Ensure a valid account is selected
+        if (selectedIndex == 0) 
         {
             ShowFeedback("Please select an account to delete.");
             return;
@@ -220,10 +215,22 @@ public class LoginManager : MonoBehaviour
 
         string selectedAccount = accountDropdown.options[selectedIndex].text;
 
-        // Send delete request to the server
-        NetworkClientProcessing.SendMessageToServer($"3,{selectedAccount}", TransportPipeline.ReliableAndInOrder);
-        Debug.Log($"Delete request sent for account: {selectedAccount}");
+        if (accountPasswordMap.TryGetValue(selectedAccount, out string selectedPassword))
+        {
+            // Send delete request to the server
+            NetworkClientProcessing.SendMessageToServer($"3,{selectedAccount},{selectedPassword}", TransportPipeline.ReliableAndInOrder);
+            ShowFeedback($"Delete request sent for account: {selectedAccount}");
+
+            // Remove the account locally to reflect the deletion immediately
+            accountPasswordMap.Remove(selectedAccount);
+            RefreshAccountDropdown(new List<string>(accountPasswordMap.Keys));
+        }
+        else
+        {
+            ShowFeedback($"Password for account '{selectedAccount}' not found. Cannot delete.");
+        }
     }
+
 
     public void RefreshAccountDropdown(List<string> accountNames)
     {
@@ -240,20 +247,20 @@ public class LoginManager : MonoBehaviour
         if (accountNames == null || accountNames.Count == 0)
         {
             Debug.LogWarning("Account list is null or empty. Adding default option.");
-            accountNames = new List<string> { "Select Account" }; // Add default option
+            accountNames = new List<string> { "Select Account" };
         }
 
-        accountDropdown.ClearOptions(); // Clear existing options
-        accountNames.Insert(0, "Select Account"); // Add default "Select Account" option
-        accountDropdown.AddOptions(accountNames); // Add new options
-        accountDropdown.value = 0; // Reset dropdown to the default option
+        accountDropdown.ClearOptions(); 
+        accountNames.Insert(0, "Select Account"); 
+        accountDropdown.AddOptions(accountNames);
+        accountDropdown.value = 0;
     }
 
     public void SetObserverUI(string roomName)
     {
-        gameRoomPanel.SetActive(false); // Disable the GameRoom panel
-        ticTacToePanel.SetActive(true); // Show TicTacToe panel for observing
-        roomStatusText.text = $"Observing game in room: {roomName}"; // Update observer status
+        gameRoomPanel.SetActive(false); 
+        ticTacToePanel.SetActive(true); 
+        roomStatusText.text = $"Observing game in room: {roomName}"; 
     }
 
     public void OnAccountSelected(int index)
@@ -261,7 +268,7 @@ public class LoginManager : MonoBehaviour
         // Fetch the actual selected index directly from the dropdown
         int selectedIndex = accountDropdown.value;
 
-        if (selectedIndex > 0) // Skip the default "Select Account" option
+        if (selectedIndex > 0) 
         {
             string selectedUsername = accountDropdown.options[selectedIndex].text;
             Debug.Log($"Selected Username: {selectedUsername}");

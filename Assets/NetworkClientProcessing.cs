@@ -29,7 +29,7 @@ static public class NetworkClientProcessing
             if (chatManager != null)
             {
                 chatManager.ResetChat(); // Reset chat state
-                chatManager.gameObject.SetActive(true); // Ensure chat is active
+                chatManager.gameObject.SetActive(true);
             }
         }
         else if (signifier == ServerToClientSignifiers.StartGame)
@@ -45,7 +45,7 @@ static public class NetworkClientProcessing
 
             if (loginManager != null)
             {
-                loginManager.StartGame(); // Activate the TicTacToe panel
+                loginManager.StartGame(); 
             }
         }
 
@@ -59,16 +59,11 @@ static public class NetworkClientProcessing
             {
                 chatManager.DisplayIncomingMessage(message);
             }
-            else
-            {
-                Debug.LogError("ChatManager instance not found in the scene.");
-            }
         }
         else if (signifier == ServerToClientSignifiers.AccountCreated)
         {
             loginManager.ShowFeedback("Account created successfully!");
 
-            // Request updated account list after successful account creation
             SendMessageToServer($"{ClientToServerSignifiers.RequestAccountList}", TransportPipeline.ReliableAndInOrder);
         }
 
@@ -87,14 +82,29 @@ static public class NetworkClientProcessing
         }
         else if (signifier == ServerToClientSignifiers.AccountDeleted)
         {
-            string deletedAccount = csv[1];
-            loginManager.ShowFeedback($"Account '{deletedAccount}' deleted successfully.");
+            if (csv.Length > 1)
+            {
+                string deletedAccount = csv[1];
+                loginManager.ShowFeedback($"Account '{deletedAccount}' deleted successfully.");
+            }
+            else
+            {
+                loginManager.ShowFeedback("Account deleted successfully, but no account name was provided.");
+            }
         }
         else if (signifier == ServerToClientSignifiers.AccountDeletionFailed)
         {
-            string failedAccount = csv[1];
-            loginManager.ShowFeedback($"Failed to delete account '{failedAccount}'.");
+            if (csv.Length > 1)
+            {
+                string failedAccount = csv[1];
+                loginManager.ShowFeedback($"Failed to delete account '{failedAccount}'.");
+            }
+            else
+            {
+                loginManager.ShowFeedback("Account deletion failed. No additional details provided.");
+            }
         }
+
         else if (signifier == ServerToClientSignifiers.AccountList)
         {
             Debug.Log($"Raw Account List Received: {msg}");
@@ -195,11 +205,10 @@ static public class NetworkClientProcessing
             string roomName = csv[1];
             Debug.Log($"Joined room {roomName} as an observer.");
 
-            // Switch UI to TicTacToePanel for observer
             if (loginManager != null)
             {
-                loginManager.SetUIState(UIState.GameRoomPlaying); // Show TicTacToePanel
-                loginManager.SetObserverUI(roomName); // Activate observer UI
+                loginManager.SetUIState(UIState.GameRoomPlaying); 
+                loginManager.SetObserverUI(roomName);
                 Debug.Log("TicTacToe panel activated for observer.");
             }
 
@@ -207,11 +216,10 @@ static public class NetworkClientProcessing
             ChatManager chatManager = UnityEngine.Object.FindObjectOfType<ChatManager>();
             if (chatManager != null)
             {
-                chatManager.ResetChat(); // Clear and deactivate chat for observers
-                chatManager.gameObject.SetActive(false); // Deactivate panel
+                chatManager.ResetChat(); 
+                chatManager.gameObject.SetActive(false); 
             }
 
-            // Optionally, initialize observer-specific features in TicTacToeManager
             TicTacToeManager ticTacToeManager = UnityEngine.Object.FindObjectOfType<TicTacToeManager>();
             if (ticTacToeManager != null)
             {
@@ -325,12 +333,12 @@ public static class ClientToServerSignifiers
 {
     public const int CreateAccount = 1;
     public const int Login = 2;
-    public const int DeleteAccount = 3; // New signifier for deleting accounts
+    public const int DeleteAccount = 3;
 
     public const int CreateOrJoinGameRoom = 4;
     public const int LeaveGameRoom = 5;
     public const int SendMessageToOpponent = 6;
-    public const int PlayerMove = 11; // Ensure this exists in ClientToServerSignifiers
+    public const int PlayerMove = 11;
     public const int RequestAccountList = 13;
 }
 
@@ -341,18 +349,17 @@ public static class ServerToClientSignifiers
     public const int LoginSuccessful = 3;
     public const int LoginFailed = 4;
     public const int AccountList = 5;
-    public const int AccountDeleted = 6; // New signifier for successful deletion
-    public const int AccountDeletionFailed = 7; // New signifier for failed deletion
+    public const int AccountDeleted = 6; 
+    public const int AccountDeletionFailed = 7; 
 
     public const int GameRoomCreatedOrJoined = 8;
     public const int StartGame = 9;
     public const int OpponentMessage = 10;
-    public const int ObserverJoined = 14; // New signifier for observers joining
+    public const int ObserverJoined = 14; 
+    public const int PlayerMove = 11; 
+    public const int GameResult = 12; 
+    public const int TurnUpdate = 13;
 
-    public const int PlayerMove = 11; // Sent when a player makes a move
-    public const int GameResult = 12; // Sent when the game ends
-    public const int TurnUpdate = 13; // New signifier for turn updates
-
-    public const int BoardStateUpdate = 15; // Sending board state to observer
-    public const int GameRoomDestroyed = 16; // New signifier for destroyed rooms
+    public const int BoardStateUpdate = 15; 
+    public const int GameRoomDestroyed = 16; 
 }

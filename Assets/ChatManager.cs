@@ -9,8 +9,8 @@ public class ChatManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI chatHistoryText;
     [SerializeField] private Button sendButton;
 
-    [SerializeField] private Color youColor = Color.green; // Default green
-    [SerializeField] private Color opponentColor = Color.red; // Default red
+    [SerializeField] private Color youColor = Color.green; 
+    [SerializeField] private Color opponentColor = Color.red; 
 
     private string roomName;
 
@@ -21,7 +21,7 @@ public class ChatManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // If you want it to persist across scenes
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
