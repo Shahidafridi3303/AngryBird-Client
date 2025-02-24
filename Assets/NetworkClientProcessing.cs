@@ -6,25 +6,32 @@ static public class NetworkClientProcessing
 {
 
     #region Send and Receive Data Functions
-    static public void ReceivedMessageFromServer(string msg, TransportPipeline pipeline)
+    public static void ReceivedMessageFromServer(string msg, TransportPipeline pipeline)
     {
-        Debug.Log("Network msg received =  " + msg + ", from pipeline = " + pipeline);
-
         string[] csv = msg.Split(',');
         int signifier = int.Parse(csv[0]);
 
-        // if (signifier == ServerToClientSignifiers.asd)
-        // {
+        LoginManager loginManager = Object.FindObjectOfType<LoginManager>();
 
-        // }
-        // else if (signifier == ServerToClientSignifiers.asd)
-        // {
-
-        // }
-
-        //gameLogic.DoSomething();
-
+        if (signifier == ServerToClientSignifiers.AccountCreated)
+        {
+            loginManager.ShowFeedback("Account created successfully!");
+        }
+        else if (signifier == ServerToClientSignifiers.AccountCreationFailed)
+        {
+            loginManager.ShowFeedback("Account creation failed. Username already exists.");
+        }
+        else if (signifier == ServerToClientSignifiers.LoginSuccessful)
+        {
+            loginManager.ShowFeedback("Login successful!");
+            loginManager.SetUIState(UIState.Lobby);
+        }
+        else if (signifier == ServerToClientSignifiers.LoginFailed)
+        {
+            loginManager.ShowFeedback("Login failed. Invalid credentials.");
+        }
     }
+
 
     static public void SendMessageToServer(string msg, TransportPipeline pipeline)
     {
@@ -78,16 +85,16 @@ static public class NetworkClientProcessing
 
 }
 
-#region Protocol Signifiers
-static public class ClientToServerSignifiers
+public static class ClientToServerSignifiers
 {
-    public const int asd = 1;
+    public const int CreateAccount = 1; // For account creation requests
+    public const int Login = 2;        // For login requests
 }
 
-static public class ServerToClientSignifiers
+public static class ServerToClientSignifiers
 {
-    public const int asd = 1;
+    public const int AccountCreated = 1;           // Response for successful account creation
+    public const int AccountCreationFailed = 2;    // Response for failed account creation
+    public const int LoginSuccessful = 3;          // Response for successful login
+    public const int LoginFailed = 4;              // Response for failed login
 }
-
-#endregion
-
