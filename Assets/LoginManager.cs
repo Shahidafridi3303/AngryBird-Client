@@ -17,7 +17,6 @@ public class LoginManager : MonoBehaviour
     public TMP_InputField passwordField;
     public TextMeshProUGUI feedbackText;
     public TMP_Dropdown accountDropdown;
-    public Button deleteAccountButton; // Reference to the delete account button
 
     // Local storage for account passwords
     private Dictionary<string, string> accountPasswordMap = new Dictionary<string, string>();
@@ -70,6 +69,23 @@ public class LoginManager : MonoBehaviour
             return;
         }
         NetworkClientProcessing.SendMessageToServer($"1,{username},{password}", TransportPipeline.ReliableAndInOrder);
+    }
+
+    public void OnDeleteAccountButtonPressed()
+    {
+        int selectedIndex = accountDropdown.value;
+
+        if (selectedIndex == 0) // Ensure a valid account is selected
+        {
+            ShowFeedback("Please select an account to delete.");
+            return;
+        }
+
+        string selectedAccount = accountDropdown.options[selectedIndex].text;
+
+        // Send delete request to the server
+        NetworkClientProcessing.SendMessageToServer($"3,{selectedAccount}", TransportPipeline.ReliableAndInOrder);
+        Debug.Log($"Delete request sent for account: {selectedAccount}");
     }
 
     public void RefreshAccountDropdown(List<string> accountNames)

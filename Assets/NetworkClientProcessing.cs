@@ -27,6 +27,16 @@ static public class NetworkClientProcessing
         {
             loginManager.ShowFeedback("Login failed. Invalid credentials.");
         }
+        else if (signifier == ServerToClientSignifiers.AccountDeleted)
+        {
+            string deletedAccount = csv[1];
+            loginManager.ShowFeedback($"Account '{deletedAccount}' deleted successfully.");
+        }
+        else if (signifier == ServerToClientSignifiers.AccountDeletionFailed)
+        {
+            string failedAccount = csv[1];
+            loginManager.ShowFeedback($"Failed to delete account '{failedAccount}'.");
+        }
         else if (signifier == ServerToClientSignifiers.AccountList)
         {
             Debug.Log($"Raw Account List Received: {msg}");
@@ -85,7 +95,6 @@ static public class NetworkClientProcessing
             loginManager.ShowFeedback($"Failed to delete account '{failedAccount}'.");
         }
     }
-
 
     static public void SendMessageToServer(string msg, TransportPipeline pipeline)
     {
