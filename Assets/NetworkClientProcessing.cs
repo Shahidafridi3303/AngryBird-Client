@@ -8,7 +8,6 @@ static public class NetworkClientProcessing
         string[] csv = msg.Split(',');
         int signifier = int.Parse(csv[0]);
 
-        // Declare LoginManager once at the start of the method
         LoginManager loginManager = Object.FindObjectOfType<LoginManager>();
 
         if (signifier == ServerToClientSignifiers.AccountCreated)
@@ -28,23 +27,41 @@ static public class NetworkClientProcessing
         {
             loginManager.ShowFeedback("Login failed. Invalid credentials.");
         }
-        else if (signifier == ServerToClientSignifiers.AccountList)
+        if (signifier == ServerToClientSignifiers.AccountList)
         {
-            Debug.Log($"Raw Account List Received: {msg}"); // Log the full raw message
+            Debug.Log($"Raw Account List Received: {msg}");
 
-            // Ensure the account list is split properly
             if (csv.Length > 1)
             {
                 string accountListRaw = msg.Substring(msg.IndexOf(',') + 1); // Extract everything after the first comma
-                string[] accountNames = accountListRaw.Split(','); // Split the account list by commas
-                List<string> accounts = new List<string>(accountNames);
+                string[] accountEntries = accountListRaw.Split(','); // Split by commas
+                List<string> accounts = new List<string>();
+                Dictionary<string, string> passwords = new Dictionary<string, string>();
 
-                Debug.Log($"Processed Account List: {string.Join(", ", accounts)}"); // Log the processed account list
+                foreach (string entry in accountEntries)
+                {
+                    if (entry.Contains(":"))
+                    {
+                        string[] pair = entry.Split(':'); // Split into username and password
+                        if (pair.Length == 2)
+                        {
+                            string username = pair[0];
+                            string password = pair[1];
+                            accounts.Add(username); // Add to accounts list
+                            passwords[username] = password; // Map username to password
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Invalid account entry: {entry}");
+                    }
+                }
 
-                // Update the dropdown with the processed account list
+                Debug.Log($"Processed Accounts: {string.Join(", ", accounts)}");
+
                 if (loginManager != null)
                 {
-                    loginManager.PopulateAccountDropdown(accounts);
+                    loginManager.PopulateAccountDropdown(accounts, passwords);
                 }
                 else
                 {
@@ -56,6 +73,7 @@ static public class NetworkClientProcessing
                 Debug.LogError("Account list message is malformed or empty.");
             }
         }
+
         else if (signifier == ServerToClientSignifiers.AccountDeleted)
         {
             string deletedAccount = csv[1];
@@ -67,6 +85,7 @@ static public class NetworkClientProcessing
             loginManager.ShowFeedback($"Failed to delete account '{failedAccount}'.");
         }
     }
+
 
     static public void SendMessageToServer(string msg, TransportPipeline pipeline)
     {

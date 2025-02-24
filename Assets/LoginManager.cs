@@ -19,6 +19,9 @@ public class LoginManager : MonoBehaviour
     public TMP_Dropdown accountDropdown;
     public Button deleteAccountButton; // Reference to the delete account button
 
+    // Local storage for account passwords
+    private Dictionary<string, string> accountPasswordMap = new Dictionary<string, string>();
+
     private void Start()
     {
         SetUIState(UIState.Login);
@@ -42,21 +45,20 @@ public class LoginManager : MonoBehaviour
     {
         string username = usernameField.text;
         string password = passwordField.text;
-        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+
+        Debug.Log($"Login button pressed. Username: {username}, Password: {password}");
+
+        if (string.IsNullOrEmpty(username))
         {
-            ShowFeedback("Username and password cannot be empty.");
+            ShowFeedback("Please select or enter a username.");
             return;
         }
+
+        // Send login data to the server
         NetworkClientProcessing.SendMessageToServer($"2,{username},{password}", TransportPipeline.ReliableAndInOrder);
+        Debug.Log($"Attempting login with Username: {username}, Password: {password}");
     }
 
-    public void RefreshAccountDropdown(List<string> accountNames)
-    {
-        accountDropdown.ClearOptions();
-        accountNames.Insert(0, "Select Account"); // Add a default "Select Account" option
-        accountDropdown.AddOptions(accountNames);
-        accountDropdown.value = 0; // Reset dropdown to the default option
-    }
 
     public void OnCreateAccountButtonPressed()
     {
@@ -70,48 +72,66 @@ public class LoginManager : MonoBehaviour
         NetworkClientProcessing.SendMessageToServer($"1,{username},{password}", TransportPipeline.ReliableAndInOrder);
     }
 
-    public void OnDeleteAccountButtonPressed()
+    public void RefreshAccountDropdown(List<string> accountNames)
     {
-        int selectedIndex = accountDropdown.value;
-
-        if (selectedIndex == 0) // Ensure a valid account is selected
-        {
-            ShowFeedback("Please select an account to delete.");
-            return;
-        }
-
-        string selectedAccount = accountDropdown.options[selectedIndex].text;
-        NetworkClientProcessing.SendMessageToServer($"3,{selectedAccount}", TransportPipeline.ReliableAndInOrder);
+        accountDropdown.ClearOptions();
+        accountNames.Insert(0, "Select Account"); // Add a default "Select Account" option
+        accountDropdown.AddOptions(accountNames);
+        accountDropdown.value = 0; // Reset dropdown to the default option
     }
 
-    public void PopulateAccountDropdown(List<string> accountNames)
+    public void PopulateAccountDropdown(List<string> accountNames, Dictionary<string, string> passwords)
     {
+        accountPasswordMap = passwords; // Save the username-password mapping
+
         if (accountNames == null || accountNames.Count == 0)
         {
             Debug.LogWarning("Account list is null or empty. Adding default option.");
             accountNames = new List<string> { "Select Account" }; // Add default option
         }
 
-        Debug.Log($"Populating dropdown with accounts: {string.Join(", ", accountNames)}");
-
-        if (accountDropdown == null)
-        {
-            Debug.LogError("AccountDropdown is not assigned in LoginManager!");
-            return;
-        }
-
         accountDropdown.ClearOptions(); // Clear existing options
         accountNames.Insert(0, "Select Account"); // Add default "Select Account" option
         accountDropdown.AddOptions(accountNames); // Add new options
         accountDropdown.value = 0; // Reset dropdown to the default option
-    }
 
+        Debug.Log("Dropdown populated successfully.");
+    }
 
     public void OnAccountSelected(int index)
     {
-        if (index > 0) // Skip the default "Select Account" option
+        Debug.Log($"Dropdown selection changed. Passed index: {index}");
+
+        // Fetch the actual selected index directly from the dropdown
+        int selectedIndex = accountDropdown.value;
+        Debug.Log($"Dropdown actual selected index: {selectedIndex}");
+
+        if (selectedIndex > 0) // Skip the default "Select Account" option
         {
-            usernameField.text = accountDropdown.options[index].text; // Autofill the username field
+            string selectedUsername = accountDropdown.options[selectedIndex].text;
+            Debug.Log($"Selected Username: {selectedUsername}");
+
+            // Autofill username field
+            usernameField.text = selectedUsername;
+            Debug.Log($"Username field updated with: {usernameField.text}");
+
+            // Autofill password if available
+            if (accountPasswordMap.ContainsKey(selectedUsername))
+            {
+                passwordField.text = accountPasswordMap[selectedUsername];
+                Debug.Log($"Password field updated with: {passwordField.text}");
+            }
+            else
+            {
+                passwordField.text = "";
+                Debug.Log($"Password field cleared for: {selectedUsername}");
+            }
+        }
+        else
+        {
+            usernameField.text = "";
+            passwordField.text = "";
+            Debug.Log("Resetting fields as 'Select Account' was chosen.");
         }
     }
 
