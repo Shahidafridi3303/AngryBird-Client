@@ -105,7 +105,7 @@ public class LoginManager : MonoBehaviour
             NetworkClientProcessing.SendMessageToServer($"5,{currentRoomName}", TransportPipeline.ReliableAndInOrder);
             currentRoomName = ""; // Clear the current room locally
 
-            // Reset TicTacToePanel, ResultPanel, and ChatManager
+            // Reset panels
             if (ticTacToePanel != null)
             {
                 ticTacToePanel.SetActive(false); // Deactivate the game panel
@@ -126,8 +126,33 @@ public class LoginManager : MonoBehaviour
             }
 
             // Return to GameRoomPanel
+            gameRoomPanel.SetActive(true);
+            roomStatusText.text = "You are now in the Game Room.";
             SetUIState(UIState.GameRoomWaiting);
         }
+        else
+        {
+            Debug.Log("No room to leave.");
+        }
+    }
+
+
+    public void OnLeaveGameRoomPressed()
+    {
+        Debug.Log("Leaving the GameRoom panel...");
+
+        // Reset the room name (if set)
+        currentRoomName = "";
+
+        loginPanel.SetActive(true);
+        gameRoomPanel.SetActive(false);
+
+        feedbackText.text = "Create or login to an account";
+
+        // Update UI state
+        SetUIState(UIState.Login);
+
+        Debug.Log("Returned to the LoginPanel from the GameRoomPanel.");
     }
 
 
@@ -147,9 +172,17 @@ public class LoginManager : MonoBehaviour
 
     public void OnQuitGameButtonPressed()
     {
-        Debug.Log("Quit Game button pressed. Exiting application...");
-        Application.Quit(); // Quit the application
+        Debug.Log("Quit Game button pressed.");
+
+#if UNITY_EDITOR
+        // Stop play mode in the Unity Editor
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        // Quit the application in the built version
+        Application.Quit();
+#endif
     }
+
 
     public void StartGame()
     {
@@ -208,6 +241,13 @@ public class LoginManager : MonoBehaviour
         accountNames.Insert(0, "Select Account"); // Add default "Select Account" option
         accountDropdown.AddOptions(accountNames); // Add new options
         accountDropdown.value = 0; // Reset dropdown to the default option
+    }
+
+    public void SetObserverUI(string roomName)
+    {
+        gameRoomPanel.SetActive(false); // Disable the GameRoom panel
+        ticTacToePanel.SetActive(true); // Show TicTacToe panel for observing
+        roomStatusText.text = $"Observing game in room: {roomName}"; // Update observer status
     }
 
     public void OnAccountSelected(int index)

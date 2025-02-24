@@ -2,16 +2,19 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System;
 
 public class TicTacToeManager : MonoBehaviour
 {
     [SerializeField] private Button[] buttons;
     [SerializeField] private Sprite xSprite, oSprite; // Assign in the Inspector
-    public TextMeshProUGUI turnText, resultText;
+    public TextMeshProUGUI turnText, observerText, resultText;
 
     private string roomName;
     private bool isPlayerTurn = false;
     private int playerID; // 1 for X, 2 for O
+
+    private bool isObserver = false; // Tracks if the client is an observer
 
     void Start()
     {
@@ -99,10 +102,17 @@ public class TicTacToeManager : MonoBehaviour
 
     public void SetPlayerTurn(bool isTurn)
     {
+        if (isObserver)
+        {
+            turnText.text = "Observing game..."; // Maintain observer text
+            return;
+        }
+
         Debug.Log($"Setting player turn: IsPlayerTurn = {isTurn}");
         isPlayerTurn = isTurn;
         UpdateTurnText();
     }
+
 
     public void ShowGameResult(int result)
     {
@@ -121,11 +131,61 @@ public class TicTacToeManager : MonoBehaviour
         yield return new WaitForSeconds(1); // Wait for 1 second
 
         // Activate ResultPanel via LoginManager
-        LoginManager loginManager = Object.FindObjectOfType<LoginManager>();
+        LoginManager loginManager = UnityEngine.Object.FindObjectOfType<LoginManager>();
         if (loginManager != null)
         {
             loginManager.resultPanel.SetActive(true);
             loginManager.resultPanelMessage.text = resultText.text; // Show result
         }
     }
+
+    public void InitializeObserver(string room)
+    {
+        roomName = room;
+        Debug.Log($"Observer initialized for room: {roomName}");
+
+        turnText.gameObject.SetActive(false);
+        observerText.gameObject.SetActive(true);
+
+        // Set the observer-specific UI
+        foreach (Button button in buttons)
+        {
+            button.interactable = false; // Disable interaction for observer
+        }
+
+        isObserver = true; // Ensure observer flag is set (if you are using this flag)
+    }
+
+
+    public void UpdateBoardForObserver(string serializedBoardState)
+    {
+        string[] cells = serializedBoardState.Split(',');
+        for (int i = 0; i < cells.Length; i++)
+        {
+            int x = i / 3;
+            int y = i % 3;
+            int playerMark = int.Parse(cells[i]);
+
+            if (playerMark == 1 || playerMark == 2) // If the cell is occupied
+            {
+                Sprite sprite = (playerMark == 1) ? xSprite : oSprite;
+                buttons[i].image.sprite = sprite;
+                buttons[i].interactable = false; // Disable interaction for observers
+            }
+        }
+    }
+
+    public void UpdateBoardState(int[] flattenedBoard)
+    {
+        for (int i = 0; i < flattenedBoard.Length; i++)
+        {
+            int value = flattenedBoard[i]; // 0 = empty, 1 = Player 1 (X), 2 = Player 2 (O)
+            if (value != 0)
+            {
+                buttons[i].image.sprite = (value == 1) ? xSprite : oSprite;
+                buttons[i].interactable = false; // Ensure buttons are disabled for the observer
+            }
+        }
+    }
+
 }
