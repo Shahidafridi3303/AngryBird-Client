@@ -8,7 +8,7 @@ public class TicTacToeManager : MonoBehaviour
 {
     [SerializeField] private Button[] buttons;
     [SerializeField] private Sprite xSprite, oSprite; // Assign in the Inspector
-    public TextMeshProUGUI turnText, observerText, resultText;
+    public TextMeshProUGUI turnText, observerText, resultText, gameRoomNameText;
 
     private string roomName;
     private bool isPlayerTurn = false;
@@ -47,6 +47,8 @@ public class TicTacToeManager : MonoBehaviour
         isPlayerTurn = (turn == 1); // First player's turn
         roomName = room; // Assign room name
         UpdateTurnText();
+
+        gameRoomNameText.text = $"Room: {roomName}";
     }
 
 
@@ -123,13 +125,6 @@ public class TicTacToeManager : MonoBehaviour
         else
             resultText.text = "It's a Draw!";
 
-        StartCoroutine(DisplayResultPanel(result));
-    }
-
-    private IEnumerator DisplayResultPanel(int result)
-    {
-        yield return new WaitForSeconds(1); // Wait for 1 second
-
         // Activate ResultPanel via LoginManager
         LoginManager loginManager = UnityEngine.Object.FindObjectOfType<LoginManager>();
         if (loginManager != null)
@@ -147,6 +142,9 @@ public class TicTacToeManager : MonoBehaviour
         turnText.gameObject.SetActive(false);
         observerText.gameObject.SetActive(true);
 
+        // Update the GameRoomNameText
+        gameRoomNameText.text = $"Observing Room: {roomName}";
+
         // Set the observer-specific UI
         foreach (Button button in buttons)
         {
@@ -155,7 +153,6 @@ public class TicTacToeManager : MonoBehaviour
 
         isObserver = true; // Ensure observer flag is set (if you are using this flag)
     }
-
 
     public void UpdateBoardForObserver(string serializedBoardState)
     {

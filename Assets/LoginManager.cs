@@ -155,7 +155,6 @@ public class LoginManager : MonoBehaviour
         Debug.Log("Returned to the LoginPanel from the GameRoomPanel.");
     }
 
-
     public void OnPlayAgainButtonPressed()
     {
         Debug.Log("Play Again button pressed. Returning to GameRoom...");
@@ -174,15 +173,22 @@ public class LoginManager : MonoBehaviour
     {
         Debug.Log("Quit Game button pressed.");
 
+        // Ensure proper cleanup before quitting
+        NetworkClientProcessing.OnApplicationQuit();
+
 #if UNITY_EDITOR
         // Stop play mode in the Unity Editor
         UnityEditor.EditorApplication.isPlaying = false;
 #else
-        // Quit the application in the built version
-        Application.Quit();
+    // Quit the application in the built version
+    Application.Quit();
 #endif
     }
 
+    private void OnApplicationQuit()
+    {
+        NetworkClientProcessing.OnApplicationQuit();
+    }
 
     public void StartGame()
     {

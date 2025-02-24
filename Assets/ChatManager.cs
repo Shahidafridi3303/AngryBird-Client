@@ -9,6 +9,9 @@ public class ChatManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI chatHistoryText;
     [SerializeField] private Button sendButton;
 
+    [SerializeField] private Color youColor = Color.green; // Default green
+    [SerializeField] private Color opponentColor = Color.red; // Default red
+
     private string roomName;
 
     private void Start()
@@ -30,7 +33,8 @@ public class ChatManager : MonoBehaviour
         {
             // Send message to server
             NetworkClientProcessing.SendMessageToServer($"6,{roomName},{message}", TransportPipeline.ReliableAndInOrder);
-            AppendMessage($"You: {message}");
+            AppendMessage($"<color=#F4FF00>You:</color> {message}"); // yellow for "you"
+    
             chatInputField.text = ""; // Clear input field
         }
     }
@@ -45,7 +49,7 @@ public class ChatManager : MonoBehaviour
     public void DisplayIncomingMessage(string message)
     {
         Debug.Log($"Displaying incoming message: {message}"); // Debug for verification
-        AppendMessage($"Opponent: {message}");
+        AppendMessage($"<color=#06ECF3>Rival:</color> {message}"); // light blue for "Opponent:"
     }
 
     private void AppendMessage(string message)

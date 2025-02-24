@@ -226,26 +226,24 @@ static public class NetworkClientProcessing
         {
             Debug.Log("Received GameRoomDestroyed signal. Returning to GameRoom panel...");
 
-            // Find the LoginManager and reset the UI to GameRoomPanel
             if (loginManager != null)
             {
                 loginManager.SetUIState(UIState.GameRoomWaiting);
-                loginManager.roomStatusText.text = "A player left the room. Game has ended.";
+                loginManager.roomStatusText.text = "Game has ended. Please join or create a new room.";
             }
 
-            // Reset TicTacToeManager if necessary
             if (ticTacToeManager != null)
             {
                 ticTacToeManager.StartNewGame();
             }
 
-            // Reset ChatManager if necessary
             ChatManager chatManager = UnityEngine.Object.FindObjectOfType<ChatManager>();
             if (chatManager != null)
             {
                 chatManager.ResetChat();
             }
         }
+
 
     }
 
@@ -286,6 +284,11 @@ static public class NetworkClientProcessing
     static public void DisconnectFromServer()
     {
         networkClient.Disconnect();
+    }
+
+    static public void OnApplicationQuit()
+    {
+        DisconnectFromServer();
     }
 
     #endregion
