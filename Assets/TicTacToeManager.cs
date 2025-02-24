@@ -165,6 +165,7 @@ public class TicTacToeManager : MonoBehaviour
         }
         else
         {
+            SoundManager.instance.PlayNotYourMoveSound();
             Debug.Log("Not your turn!");
         }
     }
