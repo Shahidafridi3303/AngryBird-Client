@@ -44,7 +44,18 @@ static public class NetworkClientProcessing
         {
             string message = csv[1];
             Debug.Log($"Message from opponent: {message}");
+
+            ChatManager chatManager = Object.FindObjectOfType<ChatManager>();
+            if (chatManager != null)
+            {
+                chatManager.DisplayIncomingMessage(message);
+            }
+            else
+            {
+                Debug.LogError("ChatManager instance not found in the scene.");
+            }
         }
+
         else if (signifier == ServerToClientSignifiers.AccountCreated)
         {
             loginManager.ShowFeedback("Account created successfully!");

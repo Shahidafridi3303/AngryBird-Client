@@ -35,13 +35,30 @@ public class ChatManager : MonoBehaviour
         }
     }
 
+    public void ResetChat()
+    {
+        chatHistoryText.text = ""; // Clear chat history
+        chatInputField.text = ""; // Clear input field
+        chatPanel.SetActive(false); // Deactivate chat panel
+    }
+
     public void DisplayIncomingMessage(string message)
     {
+        Debug.Log($"Displaying incoming message: {message}"); // Debug for verification
         AppendMessage($"Opponent: {message}");
     }
 
     private void AppendMessage(string message)
     {
-        chatHistoryText.text += $"{message}\n"; // Add message to chat history
+        if (chatHistoryText != null)
+        {
+            chatHistoryText.text += $"{message}\n"; // Add message to chat history
+            Debug.Log($"Appended message to chat history: {message}"); // Debug
+        }
+        else
+        {
+            Debug.LogError("ChatHistoryText reference is missing in ChatManager.");
+        }
     }
+
 }

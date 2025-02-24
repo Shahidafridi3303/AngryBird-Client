@@ -15,6 +15,7 @@ public class LoginManager : MonoBehaviour
     public GameObject loginPanel;
     public GameObject gameRoomPanel; // Replace lobbyPanel with gameRoomPanel
     public GameObject ticTacToePanel; // Add a reference to the TicTacToePanel
+    public GameObject chatPanel; // Reference to ChatManager panel
     public TMP_InputField usernameField;
     public TMP_InputField passwordField;
     public TextMeshProUGUI feedbackText;
@@ -39,6 +40,7 @@ public class LoginManager : MonoBehaviour
         loginPanel.SetActive(state == UIState.Login);
         gameRoomPanel.SetActive(state == UIState.GameRoomWaiting || state == UIState.GameRoomPlaying);
         ticTacToePanel.SetActive(state == UIState.GameRoomPlaying); // Show TicTacToePanel only when playing
+        chatPanel.SetActive(state == UIState.GameRoomPlaying); // Show ChatPanel only when playing
     }
 
     public void OnLoginButtonPressed()
@@ -103,10 +105,19 @@ public class LoginManager : MonoBehaviour
             NetworkClientProcessing.SendMessageToServer($"5,{currentRoomName}", TransportPipeline.ReliableAndInOrder);
             currentRoomName = ""; // Clear the current room locally
 
-            // Reset TicTacToePanel and ResultPanel
+            // Reset TicTacToePanel, ResultPanel, and ChatManager
             if (ticTacToePanel != null)
             {
                 ticTacToePanel.SetActive(false); // Deactivate the game panel
+            }
+
+            if (chatPanel != null)
+            {
+                ChatManager chatManager = FindObjectOfType<ChatManager>();
+                if (chatManager != null)
+                {
+                    chatManager.ResetChat(); // Reset and deactivate chat
+                }
             }
 
             if (resultPanel != null)
@@ -118,6 +129,7 @@ public class LoginManager : MonoBehaviour
             SetUIState(UIState.GameRoomWaiting);
         }
     }
+
 
     public void OnPlayAgainButtonPressed()
     {
@@ -133,7 +145,6 @@ public class LoginManager : MonoBehaviour
         SetUIState(UIState.GameRoomWaiting);
     }
 
-
     public void OnQuitGameButtonPressed()
     {
         Debug.Log("Quit Game button pressed. Exiting application...");
@@ -146,8 +157,17 @@ public class LoginManager : MonoBehaviour
         SetUIState(UIState.GameRoomPlaying);
         gameRoomPanel.SetActive(false); // Deactivate GameRoomPanel
         ticTacToePanel.SetActive(true); // Activate TicTacToePanel
-        Debug.Log("TicTacToe panel activated");
+        chatPanel.SetActive(true); // Activate ChatManager panel
+
+        ChatManager chatManager = FindObjectOfType<ChatManager>();
+        if (chatManager != null)
+        {
+            chatManager.InitializeChat(currentRoomName); // Initialize chat with room name
+        }
+
+        Debug.Log("TicTacToe panel and ChatManager panel activated");
     }
+
 
     public void OnDeleteAccountButtonPressed()
     {
