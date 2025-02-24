@@ -143,7 +143,6 @@ public class TicTacToeManager : MonoBehaviour
         }
     }
 
-
     public void OnCellClicked(int index)
     {
         if (isPlayerTurn)
